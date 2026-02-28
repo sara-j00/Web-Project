@@ -27,27 +27,29 @@ public class AuthService : IAuthService
 
         try
         {
-            var userId = await _userRepository.CreateAsync(
-                request.Email,
-                request.Username,
-                request.Password
-            );
+        var userId = await _userRepository.CreateAsync(
+            request.Email,
+            request.Username,
+            request.Password
+        );
 
-            await _profileRepository.CreateAsync(
-                userId,
-                request.Username,
-                request.MobileNumber
-            );
+        // 2. Queue profile creation
+        await _profileRepository.CreateAsync(
+            userId,
+            request.Username,
+            request.MobileNumber
+        );
 
-            await _unitOfWork.Commit();
+        // 3. Persist profile (Identity already saved internally)
+        await _unitOfWork.Commit();
             await _unitOfWork.CommitTransaction();
-        }
+    }
 
         catch
-        {
+    {
             await _unitOfWork.Rollback();
             throw;
-        }
+    }
     }
 
     //public Task ChangePasswordAsync(ChangePasswordRequest request)
@@ -78,4 +80,5 @@ public class AuthService : IAuthService
     {
         await _userRepository.SignOutAsync();
     }
+
 }

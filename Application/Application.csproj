@@ -10,14 +10,13 @@
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<PackageReference Include="FluentValidation" Version="12.1.1" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+	</ItemGroup>
   <ItemGroup>
-    <Folder Include="Features\Profiles\Dtos\" />
-    <Folder Include="Features\Profiles\Services\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="12.1.1" />
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <Folder Include="Abstraction\" />
+    <Folder Include="Features\" />
   </ItemGroup>
 
 </Project>
