@@ -3,3 +3,4 @@ obj/
 .vs/
 *.user
 *.log
+/Application/Features/Auth/Dtos/LoginRequest.cs
