@@ -80,5 +80,4 @@ public class AuthService : IAuthService
     {
         await _userRepository.SignOutAsync();
     }
-
 }
