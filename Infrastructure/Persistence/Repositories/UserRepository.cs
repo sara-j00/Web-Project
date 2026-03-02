@@ -77,5 +77,9 @@ public class UserRepository : IUserRepository
         await _signInManager.SignInAsync(user, isPersistent: false);
     }
 
+    public async Task SignOutAsync()
+    {
+        await _signInManager.SignOutAsync();
+    }
 
 }

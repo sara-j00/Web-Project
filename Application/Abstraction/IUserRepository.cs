@@ -16,4 +16,5 @@ public interface IUserRepository
     Task<string?> GetUserIdByUsernameAsync(string username);
     Task<bool> CheckPasswordAsync(string userId, string password);
     Task SignInAsync(string userId);
+    Task SignOutAsync();
 }

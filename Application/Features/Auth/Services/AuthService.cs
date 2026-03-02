@@ -64,9 +64,8 @@ public class AuthService : IAuthService
         await _userRepository.SignInAsync(userId);
     }
 
-    public Task LogoutAsync(string userId)
+    public async Task LogoutAsync()
     {
-        throw new NotImplementedException();
+        await _userRepository.SignOutAsync();
     }
-
 }

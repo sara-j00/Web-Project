@@ -6,6 +6,6 @@ public interface IAuthService
 {
     Task RegisterAsync(RegisterRequest request);
     Task LoginAsync(LoginRequest request);
-    Task LogoutAsync(string userId);
+    Task LogoutAsync();
     //Task ChangePasswordAsync(ChangePasswordRequest request);
 }
