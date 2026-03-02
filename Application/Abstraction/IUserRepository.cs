@@ -12,5 +12,8 @@ public interface IUserRepository
     /// </summary>
     Task<string> CreateAsync(string email, string username, string password);
     Task DeleteAsync(ClaimsPrincipal userClaims);
-
+    Task<string?> GetUserIdByEmailAsync(string email);
+    Task<string?> GetUserIdByUsernameAsync(string username);
+    Task<bool> CheckPasswordAsync(string userId, string password);
+    Task SignInAsync(string userId);
 }

@@ -7,9 +7,11 @@ namespace Infrastructure.Persistence.Repositories;
 public class UserRepository : IUserRepository
 {
     private readonly UserManager<IdentityUser> _userManager;
-    public UserRepository(UserManager<IdentityUser> userManager)
+    private readonly SignInManager<IdentityUser> _signInManager;
+    public UserRepository(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
     {
         _userManager = userManager;
+        _signInManager = signInManager;
     }
     public async Task<bool> EmailExistsAsync(string email)
     {
@@ -41,7 +43,39 @@ public class UserRepository : IUserRepository
     }
     public async Task DeleteAsync(ClaimsPrincipal userClaims)
     {
-
+        var user = await _userManager.GetUserAsync(userClaims);
+        if (user != null)
+            await _userManager.DeleteAsync(user);
     }
+
+    public async Task<string?> GetUserIdByEmailAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        return user?.Id;
+    }
+
+    public async Task<string?> GetUserIdByUsernameAsync(string username)
+    {
+        var user = await _userManager.FindByNameAsync(username);
+        return user?.Id;
+    }
+
+    public async Task<bool> CheckPasswordAsync(string userId, string password)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return false;
+
+        return await _userManager.CheckPasswordAsync(user, password);
+    }
+
+    public async Task SignInAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            throw new Exception("User not found");
+
+        await _signInManager.SignInAsync(user, isPersistent: false);
+    }
+
 
 }

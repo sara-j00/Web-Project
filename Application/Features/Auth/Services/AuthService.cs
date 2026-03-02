@@ -40,14 +40,28 @@ public class AuthService : IAuthService
         await _unitOfWork.Commit();
     }
 
-    public Task ChangePasswordAsync(ChangePasswordRequest request)
-    {
-        throw new NotImplementedException();
-    }
+    //public Task ChangePasswordAsync(ChangePasswordRequest request)
+    //{
+    //    throw new NotImplementedException();
+    //}
 
-    public Task LoginAsync(LoginRequest request)
+    public async Task LoginAsync(LoginRequest request)
     {
-        throw new NotImplementedException();
+        string? userId;
+
+        if (request.UsernameOrEmail.Contains("@"))
+            userId = await _userRepository.GetUserIdByEmailAsync(request.UsernameOrEmail);
+        else
+            userId = await _userRepository.GetUserIdByUsernameAsync(request.UsernameOrEmail);
+
+        if (userId == null)
+            throw new Exception("Invalid credentials");
+
+        bool valid = await _userRepository.CheckPasswordAsync(userId, request.Password);
+        if (!valid)
+            throw new Exception("Invalid credentials");
+
+        await _userRepository.SignInAsync(userId);
     }
 
     public Task LogoutAsync(string userId)
