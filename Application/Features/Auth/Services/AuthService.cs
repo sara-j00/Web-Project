@@ -33,12 +33,11 @@ public class AuthService : IAuthService
             request.Password
         );
 
-        // 2. Queue profile creation
-        await _profileRepository.CreateAsync(
-            userId,
-            request.Username,
-            request.MobileNumber
-        );
+            await _profileRepository.CreateAsync(
+                userId,
+                request.Username,
+                request.MobileNumber
+            );
 
         // 3. Persist profile (Identity already saved internally)
         await _unitOfWork.Commit();
