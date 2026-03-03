@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Profile\Dtos\" />
-    <Folder Include="Features\Profile\Services\" />
+    <Folder Include="Features\Profiles\Dtos\" />
+    <Folder Include="Features\Profiles\Services\" />
   </ItemGroup>
 
   <ItemGroup>

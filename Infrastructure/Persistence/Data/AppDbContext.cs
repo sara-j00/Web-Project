@@ -31,6 +31,9 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
         builder.Entity<Profile>()
             .Property(p => p.UserId)
             .IsRequired();
+
+
+        builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 
 }

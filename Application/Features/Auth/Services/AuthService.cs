@@ -22,22 +22,32 @@ public class AuthService : IAuthService
 
     public async Task RegisterAsync(RegisterRequest request)
     {
-        // 1. Create Identity user
-        var userId = await _userRepository.CreateAsync(
-            request.Email,
-            request.Username,
-            request.Password
-        );
 
-        // 2. Queue profile creation
-        await _profileRepository.CreateAsync(
-            userId,
-            request.Username,
-            request.MobileNumber
-        );
+        await _unitOfWork.StartTransaction();
 
-        // 3. Persist profile (Identity already saved internally)
-        await _unitOfWork.Commit();
+        try
+        {
+            var userId = await _userRepository.CreateAsync(
+                request.Email,
+                request.Username,
+                request.Password
+            );
+
+            await _profileRepository.CreateAsync(
+                userId,
+                request.Username,
+                request.MobileNumber
+            );
+
+            await _unitOfWork.Commit();
+            await _unitOfWork.CommitTransaction();
+        }
+
+        catch
+        {
+            await _unitOfWork.Rollback();
+            throw;
+        }
     }
 
     //public Task ChangePasswordAsync(ChangePasswordRequest request)

@@ -9,7 +9,7 @@ namespace Application.Abstraction;
 
 public interface IGenricRepository<TEntity> where TEntity : class
 {
-    Task<TEntity?> GetByIdAsync(Guid id);
+    Task<TEntity?> GetByIdAsync(int id);
     Task<IEnumerable<TEntity>> GetAll();
 
     IQueryable<TEntity> AsQueryable();

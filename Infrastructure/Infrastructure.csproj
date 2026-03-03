@@ -12,7 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Persistence\Configurations\" />
+    <Folder Include="Migrations\" />
+    <Folder Include="Persistence\Configurations\Categories\" />
+    <Folder Include="Persistence\Configurations\Profiles\" />
   </ItemGroup>
 
   <ItemGroup>
