@@ -8,29 +8,4 @@ public class CategoryRepository : GenericRepository<Category>, ICategoryReposito
 {
     public CategoryRepository(AppDbContext context) : base(context) { }
 
-    public async Task<Category> CreateAsync(Category category)
-    {
-        await AddAsync(category);
-        return category;
-    }
-    
-    Task<IEnumerable<Category>> ICategoryRepository.GetAllAsync()
-    {
-        throw new NotImplementedException();
-    }
-
-    Task<Category?> ICategoryRepository.GetByIdAsync(Guid id)
-    {
-        throw new NotImplementedException();
-    }
-
-    void ICategoryRepository.Remove(Category category)
-    {
-        throw new NotImplementedException();
-    }
-
-    void ICategoryRepository.Update(Category category)
-    {
-        throw new NotImplementedException();
-    }
 }

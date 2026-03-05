@@ -4,7 +4,7 @@ using Application.Abstraction;
 
 namespace Infrastructure.Persistence.Repositories;
 
-public class GenericRepository<TEntity> : IGenricRepository<TEntity> where TEntity : class
+public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : class
 {
     protected readonly DbContext _context;
     protected readonly DbSet<TEntity> _dbSet;

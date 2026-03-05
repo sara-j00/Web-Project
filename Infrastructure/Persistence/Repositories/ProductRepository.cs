@@ -9,12 +9,6 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
 {
     public ProductRepository(AppDbContext context) : base(context) { }
 
-    public async Task<Product> CreateAsync(Product product)
-    {
-        await AddAsync(product);
-        return product;
-    }
-
     public async Task<IEnumerable<Product>> GetAllAsync()
     {
         return await _dbSet
@@ -27,15 +21,5 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
         return await _dbSet
             .Include(p => p.Images)
             .FirstOrDefaultAsync(p => p.Id == id);
-    }
-
-    void IProductRepository.Remove(Product product)
-    {
-        throw new NotImplementedException();
-    }
-
-    void IProductRepository.Update(Product product)
-    {
-        throw new NotImplementedException();
     }
 }

@@ -16,7 +16,6 @@
 	</ItemGroup>
   <ItemGroup>
     <Folder Include="Abstraction\" />
-    <Folder Include="Features\" />
   </ItemGroup>
 
 </Project>

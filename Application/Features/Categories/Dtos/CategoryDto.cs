@@ -1,6 +1,6 @@
 ﻿namespace Application.Features.Categories.Dtos;
 
-public record CreateCategoryRequest(
+public record CategoryDto(
+    int Id,
     string Name
     );
-

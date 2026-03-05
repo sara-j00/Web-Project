@@ -4,6 +4,5 @@ namespace Application.Features.Categories.Services;
 
 public interface ICategoryService
 {
-    Task<CreateCategoryRequest> CreateAsync(string name);
-    Task<IEnumerable<CreateCategoryRequest>> GetAllAsync();
+    Task<CategoryDto> CreateAsync(CreateCategoryRequest request);
 }
