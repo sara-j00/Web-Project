@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Application.Features.Categories.Dtos;
 
-namespace Application.Features.Categories.Dtos
-{
-    internal class UpdateCategoryRequest
-    {
-    }
-}
+public record UpdateCategoryRequest(
+    string Name
+    );
