@@ -1,5 +1,6 @@
 ﻿using Application.Abstraction;
 using Application.Abstractions;
+using Application.Features.Categories.Services;
 using Infrastructure.Persistence.Data;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.Persistence.UnitOfWork;
@@ -31,6 +32,9 @@ public static class DependencyInjection
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IImageStorageService, LocalImageStorageService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
 
         return services;
     }

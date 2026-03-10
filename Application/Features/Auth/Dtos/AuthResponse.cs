@@ -2,6 +2,7 @@
 
 public record AuthResponse
 (
-    string Username,
-    string Email
+    string Token,
+    string Email,
+    string Role
 );

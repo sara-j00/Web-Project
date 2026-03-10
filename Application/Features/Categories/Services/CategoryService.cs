@@ -53,5 +53,37 @@ public class CategoryService : ICategoryService
     // Entity is tracked – no need to call Update()
     await _unitOfWork.Commit();
 }
+
+    public async Task DeleteAsync(int id)
+    {
+        var category = await _categoryRepo.GetByIdAsync(id);
+        if (category == null)
+            throw new InvalidOperationException($"Category with id {id} not found.");
+
+        // Optional: prevent deletion if category has products
+        // You need a way to check related products – either through a ProductRepository or navigation property
+        // Example using a hypothetical method:
+        bool hasProducts = await _categoryRepo.HasProductsAsync(id); // You'd need to implement this in ICategoryRepository
+        if (hasProducts)
+            throw new InvalidOperationException("Cannot delete category that has products.");
+
+        _categoryRepo.Remove(category);
+        await _unitOfWork.Commit();
+    }
+
+    public async Task<IEnumerable<CategoryDto>> GetAllAsync()
+    {
+        var categories = await _categoryRepo.GetAll();
+        return categories.Select(c => new CategoryDto(c.Id, c.Name));
+    }
+
+    public async Task<CategoryDto> GetByIdAsync(int id)
+    {
+        var category = await _categoryRepo.GetByIdAsync(id);
+        if (category == null)
+            throw new InvalidOperationException($"Category with id {id} not found.");
+
+        return new CategoryDto(category.Id, category.Name);
+    }
 }
 
