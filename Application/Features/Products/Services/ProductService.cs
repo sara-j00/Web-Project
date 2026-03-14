@@ -52,6 +52,7 @@ public class ProductService : IProductService
             product.Name,
             product.Description,
             product.Price,
+            product.Stock,
             product.CategoryId,
             product.Images.Select(i => i.ImageUrl).ToList());
     }
@@ -72,6 +73,7 @@ public class ProductService : IProductService
         product.Name = request.Name;
         product.Description = request.Description;
         product.Price = request.Price;
+        product.Stock = request.Stock;
         product.CategoryId = request.CategoryId;
 
         // Save changes
@@ -120,12 +122,12 @@ public class ProductService : IProductService
     {
         var p = await _productRepo.GetByIdAsync(id);
         if (p == null) return null; 
-        return new ProductDto( p.Id, p.Name, p.Description, p.Price, p.CategoryId, p.Images.Select(i => i.ImageUrl).ToList());
+        return new ProductDto( p.Id, p.Name, p.Description, p.Price, p.Stock, p.CategoryId, p.Images.Select(i => i.ImageUrl).ToList());
     }
 
     public async Task<IEnumerable<ProductDto>> GetAllAsync()
     {
         var products = await _productRepo.GetAllAsync();
-        return products.Select(p => new ProductDto( p.Id, p.Name, p.Description, p.Price, p.CategoryId, p.Images.Select(i => i.ImageUrl).ToList()));
+        return products.Select(p => new ProductDto( p.Id, p.Name, p.Description, p.Price, p.Stock, p.CategoryId, p.Images.Select(i => i.ImageUrl).ToList()));
     }
 }

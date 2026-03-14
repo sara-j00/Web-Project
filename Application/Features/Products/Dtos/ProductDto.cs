@@ -5,6 +5,7 @@ public record ProductDto (
         string Name,
         string Description,
         decimal Price,
+        int Stock,
         int CategoryId,
         List<string> Images
     );
