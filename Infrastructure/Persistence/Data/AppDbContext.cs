@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using System.Reflection.Emit;
+using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,23 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             .Property(p => p.UserId)
             .IsRequired();
 
+        builder.Entity<Cart>()
+            .HasOne(c => c.Profile)
+            .WithOne(p => p.Cart)
+            .HasForeignKey<Cart>(c => c.ProfileId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Cart>()
+            .HasMany(c => c.Items)
+            .WithOne(ci => ci.Cart)
+            .HasForeignKey(ci => ci.CartId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<CartItem>()
+            .HasOne(ci => ci.Product)
+            .WithMany()
+            .HasForeignKey(ci => ci.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
