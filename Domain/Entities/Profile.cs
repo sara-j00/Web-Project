@@ -17,7 +17,7 @@ public class Profile
 
     private Profile() { } // For EF
 
-    public Profile(string username, string userId, string mobileNumber)
+    public Profile(string userId, string username, string mobileNumber)
     {
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentException("Profile must be associated with a user.");

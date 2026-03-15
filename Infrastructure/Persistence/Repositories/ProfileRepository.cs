@@ -1,6 +1,7 @@
-﻿using Domain.Entities;
-using Application.Abstractions;
+﻿using Application.Abstractions;
+using Domain.Entities;
 using Infrastructure.Persistence.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories;
 
@@ -13,5 +14,9 @@ public class ProfileRepository : GenericRepository<Profile>, IProfileRepository
     {
         var profile = new Profile(userId, username, mobileNumber);
         await AddAsync(profile);
+    }
+    public async Task<Profile?> GetByUserIdAsync(string userId)
+    {
+        return await _context.Set<Profile>().FirstOrDefaultAsync(p => p.UserId == userId);
     }
 }

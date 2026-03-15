@@ -1,6 +1,9 @@
 ﻿using Application.Abstraction;
 using Application.Abstractions;
+using Application.Features.Cart.Services;
 using Application.Features.Categories.Services;
+using Application.Features.Orders.Services;
+using Application.Features.Products.Services;
 using Infrastructure.Persistence.Data;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.Persistence.UnitOfWork;
@@ -35,6 +38,12 @@ public static class DependencyInjection
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<ICartService, CartService>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IPaymentService, MockPaymentService>();
 
         return services;
     }
