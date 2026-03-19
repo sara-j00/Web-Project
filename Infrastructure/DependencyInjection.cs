@@ -1,5 +1,6 @@
 ﻿using Application.Abstraction;
 using Application.Abstractions;
+using Application.Features.Admin.Services;
 using Application.Features.Cart.Services;
 using Application.Features.Categories.Services;
 using Application.Features.Orders.Services;
@@ -47,6 +48,8 @@ public static class DependencyInjection
         services.AddScoped<IPaymentService, MockPaymentService>();
         services.AddScoped<IWishlistRepository, WishlistRepository>();
         services.AddScoped<IWishlistService, WishlistService>();
+        services.AddScoped<IAdminRepository, AdminRepository>();
+        services.AddScoped<IAdminService, AdminService>();
 
         return services;
     }
