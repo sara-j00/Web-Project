@@ -69,6 +69,25 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             .HasForeignKey(oi => oi.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Entity<Wishlist>()
+            .HasOne(w => w.Profile)
+            .WithMany()
+            .HasForeignKey(w => w.ProfileId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<WishlistItem>()
+            .HasOne(wi => wi.Wishlist)
+            .WithMany(w => w.Items)
+            .HasForeignKey(wi => wi.WishlistId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<WishlistItem>()
+            .HasOne(wi => wi.Product)
+            .WithMany()
+            .HasForeignKey(wi => wi.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
 
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

@@ -4,6 +4,7 @@ using Application.Features.Cart.Services;
 using Application.Features.Categories.Services;
 using Application.Features.Orders.Services;
 using Application.Features.Products.Services;
+using Application.Features.Wishlist.Services;
 using Infrastructure.Persistence.Data;
 using Infrastructure.Persistence.Repositories;
 using Infrastructure.Persistence.UnitOfWork;
@@ -44,6 +45,8 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPaymentService, MockPaymentService>();
+        services.AddScoped<IWishlistRepository, WishlistRepository>();
+        services.AddScoped<IWishlistService, WishlistService>();
 
         return services;
     }
