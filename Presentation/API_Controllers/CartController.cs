@@ -35,39 +35,17 @@ public class CartController : ControllerBase
     [HttpPost("items")]
     public async Task<IActionResult> AddItem(AddToCartRequest request)
     {
-        try
-        {
-            var userId = GetUserId();
-            await _cartService.AddToCartAsync(userId, request.ProductId, request.Quantity);
-            return Ok();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var userId = GetUserId();
+        await _cartService.AddToCartAsync(userId, request.ProductId, request.Quantity);
+        return Ok();
     }
 
     [HttpPut("items/{productId}")]
     public async Task<IActionResult> UpdateItem(int productId, UpdateCartItemRequest request)
     {
-        try
-        {
-            var userId = GetUserId();
-            await _cartService.UpdateQuantityAsync(userId, productId, request.Quantity);
-            return NoContent();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var userId = GetUserId();
+        await _cartService.UpdateQuantityAsync(userId, productId, request.Quantity);
+        return NoContent();
     }
 
     [HttpDelete("items/{productId}")]

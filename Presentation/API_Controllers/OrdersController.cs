@@ -25,16 +25,9 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<OrderDto>> PlaceOrder()
     {
-        try
-        {
-            var userId = GetUserId();
-            var order = await _orderService.PlaceOrderAsync(userId);
-            return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var userId = GetUserId();
+        var order = await _orderService.PlaceOrderAsync(userId);
+        return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
     }
 
     [HttpGet]
@@ -48,15 +41,8 @@ public class OrdersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<OrderDto>> GetOrder(int id)
     {
-        try
-        {
-            var userId = GetUserId();
-            var order = await _orderService.GetOrderAsync(id, userId);
-            return Ok(order);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var userId = GetUserId();
+        var order = await _orderService.GetOrderAsync(id, userId);
+        return Ok(order);
     }
 }

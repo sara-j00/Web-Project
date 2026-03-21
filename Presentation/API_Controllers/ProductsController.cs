@@ -24,75 +24,41 @@ public class ProductsController : ControllerBase
         return Ok(products);
     }
 
+
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<ActionResult<ProductDto>> GetById(int id)
     {
-        try
-        {
-            var product = await _productService.GetByIdAsync(id);
-            return Ok(product);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var product = await _productService.GetByIdAsync(id);
+        return Ok(product);
     }
+
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductDto>> Create([FromForm] CreateProductRequest request, [FromForm] List<IFormFile>? images) 
+    public async Task<ActionResult<ProductDto>> Create([FromForm] CreateProductRequest request, [FromForm] List<IFormFile>? images)
     {
-        try
-        {
-            // Convert IFormFile to streams (use extension method)
-            var imageStreams = images?.Select(f => (f.OpenReadStream(), f.FileName)).ToList();
-            var product = await _productService.CreateAsync(request, imageStreams);
-            return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(ex.Message);
-        }
+        // Convert IFormFile to streams (use extension method)
+        var imageStreams = images?.Select(f => (f.OpenReadStream(), f.FileName)).ToList();
+        var product = await _productService.CreateAsync(request, imageStreams);
+        return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, UpdateProductRequest request)
     {
-        try
-        {
-            await _productService.UpdateAsync(id, request);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _productService.UpdateAsync(id, request);
+        return NoContent();
     }
 
-    //[HttpDelete("{id}")]
-    //[Authorize(Roles = "Admin")]
-    //public async Task<IActionResult> Delete(int id)
-    //{
-    //    try
-    //    {
-    //        await _productService.DeleteAsync(id);
-    //        return NoContent();
-    //    }
-    //    catch (InvalidOperationException ex)
-    //    {
-    //        return NotFound(ex.Message);
-    //    }
-    //}
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await _productService.DeleteAsync(id);
+        return NoContent();
+    }
 
     [HttpPost("{id}/images")]
     [Authorize(Roles = "Admin")]
@@ -101,35 +67,17 @@ public class ProductsController : ControllerBase
         if (image == null || image.Length == 0)
             return BadRequest("No image uploaded.");
 
-        try
-        {
-            using var stream = image.OpenReadStream();
-            await _productService.AddImageAsync(id, stream, image.FileName);
-            return Ok();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        using var stream = image.OpenReadStream();
+        await _productService.AddImageAsync(id, stream, image.FileName);
+        return Ok();
     }
 
     [HttpDelete("{id}/images/{imageId}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> RemoveImage(int id, int imageId)
     {
-        try
-        {
-            await _productService.RemoveImageAsync(id, imageId);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        await _productService.RemoveImageAsync(id, imageId);
+        return NoContent();
     }
 
 }

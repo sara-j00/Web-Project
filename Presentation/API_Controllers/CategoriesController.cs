@@ -28,67 +28,31 @@ public class CategoriesController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<CategoryDto>> GetById(int id)
     {
-        try
-        {
-            var category = await _categoryService.GetByIdAsync(id);
-            return Ok(category);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var category = await _categoryService.GetByIdAsync(id);
+        return Ok(category);
     }
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CategoryDto>> Create(CreateCategoryRequest request)
     {
-        try
-        {
-            var category = await _categoryService.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(ex.Message);
-        }
+        var category = await _categoryService.CreateAsync(request);
+        return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, UpdateCategoryRequest request)
     {
-        try
-        {
-            await _categoryService.UpdateAsync(id, request);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _categoryService.UpdateAsync(id, request);
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
-        try
-        {
-            await _categoryService.DeleteAsync(id);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        await _categoryService.DeleteAsync(id);
+        return NoContent();
     }
 }

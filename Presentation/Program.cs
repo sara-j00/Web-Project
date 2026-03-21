@@ -3,6 +3,7 @@ using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens; // JwtTokenGenerator namespace
 using Microsoft.OpenApi.Models;
+using Presentation.Middleware;
 using Resend; // Add this using at the top
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 var resendApiKey = builder.Configuration["Resend:ApiKey"];
-builder.Services.AddSingleton<IResend>(sp => ResendClient.Create(resendApiKey)); builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSingleton<IResend>(sp => ResendClient.Create(resendApiKey)); 
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add infrastructure services (DbContext, Identity, repositories, services)
@@ -72,11 +74,13 @@ builder.Services.AddSwaggerGen(c =>
 
 
 
-// Authorization (already present, but ensure it's after Authentication)
+// Authorization 
 builder.Services.AddAuthorization();
 
 // CORS, Swagger, etc. remain unchanged
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

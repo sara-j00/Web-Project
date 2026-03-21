@@ -28,33 +28,15 @@ public class AdminController : ControllerBase
     [HttpPost("roles")]
     public async Task<IActionResult> CreateRole(CreateRoleRequest request)
     {
-        try
-        {
-            await _adminService.CreateRoleAsync(request.Name);
-            return Ok();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(ex.Message);
-        }
+        await _adminService.CreateRoleAsync(request.Name);
+        return Ok();
     }
 
     [HttpDelete("roles/{roleId}")]
     public async Task<IActionResult> DeleteRole(string roleId)
     {
-        try
-        {
-            await _adminService.DeleteRoleAsync(roleId);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        await _adminService.DeleteRoleAsync(roleId);
+        return NoContent();
     }
 
     // User management
@@ -68,28 +50,14 @@ public class AdminController : ControllerBase
     [HttpPost("users/assign-role")]
     public async Task<IActionResult> AssignRole(AssignRoleRequest request)
     {
-        try
-        {
-            await _adminService.AssignRoleAsync(request.UserId, request.Role);
-            return Ok();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _adminService.AssignRoleAsync(request.UserId, request.Role);
+        return Ok();
     }
 
     [HttpPost("users/remove-role")]
     public async Task<IActionResult> RemoveRole(AssignRoleRequest request)
     {
-        try
-        {
-            await _adminService.RemoveRoleAsync(request.UserId, request.Role);
-            return Ok();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _adminService.RemoveRoleAsync(request.UserId, request.Role);
+        return Ok();
     }
 }

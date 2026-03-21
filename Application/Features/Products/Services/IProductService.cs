@@ -10,4 +10,5 @@ public interface IProductService
     Task RemoveImageAsync(int productId, int imageId);
     Task<ProductDto?> GetByIdAsync(int id);
     Task<IEnumerable<ProductDto>> GetAllAsync();
+    Task DeleteAsync(int id);
 }

@@ -121,13 +121,31 @@ public class ProductService : IProductService
     public async Task<ProductDto?> GetByIdAsync(int id)
     {
         var p = await _productRepo.GetByIdAsync(id);
-        if (p == null) return null; 
-        return new ProductDto( p.Id, p.Name, p.Description, p.Price, p.Stock, p.CategoryId, p.Images.Select(i => i.ImageUrl).ToList());
+        if (p == null) return null;
+        return new ProductDto(p.Id, p.Name, p.Description, p.Price, p.Stock, p.CategoryId, p.Images.Select(i => i.ImageUrl).ToList());
     }
 
     public async Task<IEnumerable<ProductDto>> GetAllAsync()
     {
         var products = await _productRepo.GetAllAsync();
-        return products.Select(p => new ProductDto( p.Id, p.Name, p.Description, p.Price, p.Stock, p.CategoryId, p.Images.Select(i => i.ImageUrl).ToList()));
+        return products.Select(p => new ProductDto(p.Id, p.Name, p.Description, p.Price, p.Stock, p.CategoryId, p.Images.Select(i => i.ImageUrl).ToList()));
     }
+
+
+    public async Task DeleteAsync(int id)
+    {
+        var product = await _productRepo.GetByIdAsync(id);
+        if (product == null)
+            throw new InvalidOperationException($"Product with id {id} not found.");
+
+        // Optionally, you might want to remove associated images from storage first
+        foreach (var image in product.Images.ToList())
+        {
+            await _imageStorage.DeleteAsync(image.ImageUrl);
+        }
+
+        _productRepo.Remove(product);
+        await _unitOfWork.Commit();
+    }
+
 }

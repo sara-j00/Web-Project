@@ -33,16 +33,9 @@ public class WishlistController : ControllerBase
     [HttpPost("items/{productId}")]
     public async Task<IActionResult> AddItem(int productId)
     {
-        try
-        {
-            var userId = GetUserId();
-            await _wishlistService.AddToWishlistAsync(userId, productId);
-            return Ok();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        var userId = GetUserId();
+        await _wishlistService.AddToWishlistAsync(userId, productId);
+        return Ok();
     }
 
     [HttpDelete("items/{productId}")]
