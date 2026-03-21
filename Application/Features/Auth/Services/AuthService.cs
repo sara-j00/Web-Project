@@ -2,6 +2,7 @@
 using Application.Abstractions;
 using Application.Common.Models;
 using Application.Features.Auth.Dtos;
+using Microsoft.Extensions.Configuration;
 
 namespace Application.Features.Auth.Services;
 
@@ -11,17 +12,23 @@ public class AuthService : IAuthService
     private readonly IProfileRepository _profileRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITokenGenerator _tokenGenerator;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
     public AuthService(
         IUserRepository userRepository,
         IProfileRepository profileRepository,
         IUnitOfWork unitOfWork,
-        ITokenGenerator tokenGenerator)
+        ITokenGenerator tokenGenerator,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _userRepository = userRepository;
         _profileRepository = profileRepository;
         _unitOfWork = unitOfWork;
         _tokenGenerator = tokenGenerator;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -103,4 +110,41 @@ public class AuthService : IAuthService
     }
 
     public Task LogoutAsync() => Task.CompletedTask; // JWT is stateless
+
+
+    public async Task ForgotPasswordAsync(string email, string origin)
+    {
+        var user = await _userRepository.GetUserByEmailAsync(email);
+        if (user == null) return; // Don't leak existence
+
+        var token = await _userRepository.GeneratePasswordResetTokenAsync(user.Id);
+        var resetLink = $"{origin}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(email)}";
+
+        var subject = "Password Reset";
+        var body = $@"
+        <p>Please reset your password by clicking the link below:</p>
+        <p><a href='{resetLink}'>Reset Password</a></p>
+        <p>If you didn't request this, please ignore this email.</p>";
+
+        await _emailService.SendEmailAsync(email, subject, body);
+        //Console.WriteLine("reset link: " + resetLink);
+    }
+
+    public async Task ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        var user = await _userRepository.GetUserByEmailAsync(request.Email);
+        if (user == null)
+            throw new InvalidOperationException("Invalid request.");
+
+        var succeeded = await _userRepository.ResetPasswordAsync(user.Id, request.Token, request.NewPassword);
+        if (!succeeded)
+            throw new InvalidOperationException("Password reset failed. Token may be invalid or expired.");
+    }
+
+    public async Task ChangePasswordAsync(string userId, ChangePasswordRequest request)
+    {
+        var succeeded = await _userRepository.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
+        if (!succeeded)
+            throw new InvalidOperationException("Current password is incorrect or new password is invalid.");
+    }
 }

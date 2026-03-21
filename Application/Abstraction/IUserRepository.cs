@@ -13,4 +13,7 @@ public interface IUserRepository
     Task<bool> CheckPasswordAsync(string userId, string password);
     Task<IList<string>> GetRolesAsync(string userId);
     Task AddToRoleAsync(string userId, string role);
+    Task<string> GeneratePasswordResetTokenAsync(string userId);
+    Task<bool> ResetPasswordAsync(string userId, string token, string newPassword);
+    Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
 }

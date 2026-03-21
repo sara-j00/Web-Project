@@ -84,4 +84,27 @@ public class UserRepository : IUserRepository
             UserName = user.UserName!
         };
     }
+
+    public async Task<string> GeneratePasswordResetTokenAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) throw new InvalidOperationException("User not found.");
+        return await _userManager.GeneratePasswordResetTokenAsync(user);
+    }
+
+    public async Task<bool> ResetPasswordAsync(string userId, string token, string newPassword)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return false;
+        var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+        return result.Succeeded;
+    }
+
+    public async Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return false;
+        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        return result.Succeeded;
+    }
 }

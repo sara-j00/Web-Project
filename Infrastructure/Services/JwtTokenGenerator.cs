@@ -19,6 +19,7 @@ public class JwtTokenGenerator : ITokenGenerator
 
     public string GenerateToken(UserModel user, string role)
     {
+        // 1. Create the claims (data inside the token)
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
@@ -27,14 +28,16 @@ public class JwtTokenGenerator : ITokenGenerator
             new Claim(ClaimTypes.Role, role)
         };
 
+        // 2. Read the secret key from configuration
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        // 3. Build the token descriptor
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.Now.AddHours(1),
+            expires: DateTime.Now.AddHours(24),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

@@ -1,6 +1,7 @@
 ﻿using Application.Abstraction;
 using Application.Abstractions;
 using Application.Features.Admin.Services;
+using Application.Features.Auth.Services;
 using Application.Features.Cart.Services;
 using Application.Features.Categories.Services;
 using Application.Features.Orders.Services;
@@ -29,26 +30,34 @@ public static class DependencyInjection
 
         // Configure Identity
         services.AddIdentity<IdentityUser, IdentityRole>()
-                .AddEntityFrameworkStores<AppDbContext>()
-                .AddDefaultTokenProviders();
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
 
-        // Register repositories
+        // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped<IImageStorageService, LocalImageStorageService>();
-        services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
-        services.AddScoped<IProductService, ProductService>();
         services.AddScoped<ICartRepository, CartRepository>();
-        services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IWishlistRepository, WishlistRepository>();
+        services.AddScoped<IAdminRepository, AdminRepository>();
+
+        // Unit of Work / Infrastructure
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IImageStorageService, LocalImageStorageService>();
+        services.AddScoped<IEmailService, SendGridEmailService>();
+        services.AddScoped<IEmailService, ResendEmailService>();
+
+        // Application Services
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddSingleton<ITokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPaymentService, MockPaymentService>();
-        services.AddScoped<IWishlistRepository, WishlistRepository>();
         services.AddScoped<IWishlistService, WishlistService>();
-        services.AddScoped<IAdminRepository, AdminRepository>();
         services.AddScoped<IAdminService, AdminService>();
 
         return services;
