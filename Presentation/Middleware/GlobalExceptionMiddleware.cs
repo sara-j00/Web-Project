@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+using Application.Exceptions;
 
 namespace Presentation.Middleware;
 
@@ -32,6 +31,7 @@ public class GlobalExceptionMiddleware
                 InvalidOperationException => (int)HttpStatusCode.NotFound,
                 ArgumentException => (int)HttpStatusCode.BadRequest,
                 UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
+                ConflictException => (int)HttpStatusCode.Conflict,
                 _ => (int)HttpStatusCode.InternalServerError
             };
 

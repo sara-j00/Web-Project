@@ -8,7 +8,7 @@ public interface IProductService
     Task UpdateAsync(int id, UpdateProductRequest request);
     Task AddImageAsync(int productId, Stream imageStream, string fileName);
     Task RemoveImageAsync(int productId, int imageId);
-    Task<ProductDto?> GetByIdAsync(int id);
+    Task<ProductDto> GetByIdAsync(int id);
     Task<IEnumerable<ProductDto>> GetAllAsync();
     Task DeleteAsync(int id);
 }

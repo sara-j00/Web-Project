@@ -1,6 +1,7 @@
 ﻿using Application.Abstraction;
 using Application.Abstractions;
 using Application.Common.Models;
+using Application.Exceptions;
 using Application.Features.Auth.Dtos;
 using Microsoft.Extensions.Configuration;
 
@@ -39,9 +40,9 @@ public class AuthService : IAuthService
         {
             // 1. Check uniqueness (optional, can also be done by Identity)
             if (await _userRepository.EmailExistsAsync(request.Email))
-                throw new Exception("Email already exists.");
+                throw new ConflictException("Email already exists.");
             if (await _userRepository.UsernameExistsAsync(request.Username))
-                throw new Exception("Username already exists.");
+                throw new ConflictException("Username already exists.");
 
             // 2. Create Identity user
             var userId = await _userRepository.CreateAsync(

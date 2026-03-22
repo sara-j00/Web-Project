@@ -118,10 +118,11 @@ public class ProductService : IProductService
         await _unitOfWork.Commit();
     }
 
-    public async Task<ProductDto?> GetByIdAsync(int id)
+    public async Task<ProductDto> GetByIdAsync(int id)
     {
         var p = await _productRepo.GetByIdAsync(id);
-        if (p == null) return null;
+        if (p == null)
+            throw new InvalidOperationException($"Product with id {id} not found.");
         return new ProductDto(p.Id, p.Name, p.Description, p.Price, p.Stock, p.CategoryId, p.Images.Select(i => i.ImageUrl).ToList());
     }
 
