@@ -2,6 +2,7 @@
 using Application.Abstractions;
 using Application.Features.Cart.Dtos;
 using Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Features.Cart.Services;
 
@@ -11,17 +12,20 @@ public class CartService : ICartService
     private readonly IProfileRepository _profileRepo;
     private readonly IProductRepository _productRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<CartService> _logger;
 
     public CartService(
         ICartRepository cartRepo,
         IProfileRepository profileRepo,
         IProductRepository productRepo,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<CartService> logger)
     {
         _cartRepo = cartRepo;
         _profileRepo = profileRepo;
         _productRepo = productRepo;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     private async Task<int> GetProfileIdAsync(string userId)
@@ -68,6 +72,8 @@ public class CartService : ICartService
 
     public async Task AddToCartAsync(string userId, int productId, int quantity)
     {
+        _logger.LogInformation("Adding product {ProductId} to cart for user {UserId}, quantity {Quantity}", productId, userId, quantity);
+
         if (quantity <= 0)
             throw new ArgumentException("Quantity must be positive.");
 
@@ -98,6 +104,7 @@ public class CartService : ICartService
             _cartRepo.AddItem(newItem);
         }
 
+        _logger.LogInformation("Product {ProductId} added to cart (new quantity {NewQuantity})", productId, existingItem.Quantity);
         await _unitOfWork.Commit();
     }
 
@@ -122,6 +129,8 @@ public class CartService : ICartService
 
     public async Task RemoveFromCartAsync(string userId, int productId)
     {
+        _logger.LogInformation("Removing product {ProductId} from cart for user {UserId}", productId, userId);
+
         var profileId = await GetProfileIdAsync(userId);
         var cart = await _cartRepo.GetCartWithItemsByProfileIdAsync(profileId);
         if (cart == null) return;

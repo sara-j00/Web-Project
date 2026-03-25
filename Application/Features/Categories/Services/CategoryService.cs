@@ -1,6 +1,7 @@
 ﻿using Application.Abstraction;
 using Application.Features.Categories.Dtos;
 using Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Features.Categories.Services;
 
@@ -8,19 +9,27 @@ public class CategoryService : ICategoryService
 {
     private readonly ICategoryRepository _categoryRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<CategoryService> _logger;
 
-    public CategoryService(ICategoryRepository categoryRepo, IUnitOfWork unitOfWork)
+    public CategoryService(ICategoryRepository categoryRepo, IUnitOfWork unitOfWork, ILogger<CategoryService> logger)
     {
         _categoryRepo = categoryRepo;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<CategoryDto> CreateAsync(CreateCategoryRequest request)
     {
+        _logger.LogInformation("Attempting to create category with name {CategoryName}", request.Name);
+
         // Use AnyAsync (inherited from generic repository)
         bool exists = await _categoryRepo.AnyAsync(c => c.Name == request.Name);
         if (exists)
+        {
+            _logger.LogWarning("Category creation failed: name {CategoryName} already exists", request.Name);
+            
             throw new InvalidOperationException("Category already exists.");
+        }
 
         var category = new Category { Name = request.Name };
 
@@ -29,6 +38,8 @@ public class CategoryService : ICategoryService
 
         // Commit the transaction – this saves changes to the database
         await _unitOfWork.Commit();
+
+        _logger.LogInformation("Category created with ID {CategoryId}, name {CategoryName}", category.Id, category.Name);
 
         return new CategoryDto(category.Id, category.Name);
     }
@@ -58,7 +69,11 @@ public class CategoryService : ICategoryService
     {
         var category = await _categoryRepo.GetByIdAsync(id);
         if (category == null)
+        {
+            _logger.LogWarning("Delete failed: category {CategoryId} not found", id);
+
             throw new InvalidOperationException($"Category with id {id} not found.");
+        }
 
         // Optional: prevent deletion if category has products
         // You need a way to check related products – either through a ProductRepository or navigation property
@@ -69,6 +84,8 @@ public class CategoryService : ICategoryService
 
         _categoryRepo.Remove(category);
         await _unitOfWork.Commit();
+
+        _logger.LogInformation("Category {CategoryId} deleted", id);
     }
 
     public async Task<IEnumerable<CategoryDto>> GetAllAsync()

@@ -3,7 +3,9 @@ using Application.Abstractions;
 using Application.Common.Models;
 using Application.Exceptions;
 using Application.Features.Auth.Dtos;
+using Domain.Entities;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Features.Auth.Services;
 
@@ -15,6 +17,8 @@ public class AuthService : IAuthService
     private readonly ITokenGenerator _tokenGenerator;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthService> _logger;
+
 
     public AuthService(
         IUserRepository userRepository,
@@ -22,7 +26,9 @@ public class AuthService : IAuthService
         IUnitOfWork unitOfWork,
         ITokenGenerator tokenGenerator,
         IEmailService emailService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<AuthService> logger
+        )
     {
         _userRepository = userRepository;
         _profileRepository = profileRepository;
@@ -30,6 +36,7 @@ public class AuthService : IAuthService
         _tokenGenerator = tokenGenerator;
         _emailService = emailService;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -63,15 +70,23 @@ public class AuthService : IAuthService
                 request.MobileNumber
             );
 
-            // 5. Assign default role "Customer"
+            // 5. get profile to log profileId 
+            await _profileRepository.CreateAsync(userId, request.Username, request.MobileNumber);
+            var profile = await _profileRepository.GetByUserIdAsync(userId);
+            if (profile == null) throw new Exception("Profile creation failed.");
+            var profileId = profile.Id;
+
+            // 6. Assign default role "Customer"
             const string role = "Customer";
             await _userRepository.AddToRoleAsync(userId, role);
 
-            // 6. Commit transaction
+            _logger.LogInformation("User registered successfully. Email: {Email}, ProfileId: {ProfileId}", user.Email, profileId);
+
+            // 7. Commit transaction
             await _unitOfWork.Commit();
             await _unitOfWork.CommitTransaction();
 
-            // 7. Generate token
+            // 8. Generate token
             var token = _tokenGenerator.GenerateToken(user, role);
 
             return new AuthResponse(token, user.Email, role);

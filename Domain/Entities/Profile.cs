@@ -14,6 +14,8 @@ public class Profile
     public string MobileNumber { get; set; }
 
     public Cart Cart { get; set; } = null!;
+    public ICollection<Order> Orders { get; set; } = new List<Order>();
+    public Wishlist Wishlist { get; set; } = null!;
 
     private Profile() { } // For EF
 

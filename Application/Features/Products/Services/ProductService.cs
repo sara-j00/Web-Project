@@ -1,6 +1,7 @@
 ﻿using Application.Abstraction;
 using Application.Features.Products.Dtos;
 using Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Features.Products.Services;
 
@@ -10,19 +11,24 @@ public class ProductService : IProductService
     private readonly ICategoryRepository _categoryRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IImageStorageService _imageStorage;
+    private readonly ILogger<ProductService> _logger;
 
-    public ProductService(IProductRepository productRepo, IUnitOfWork unitOfWork, IImageStorageService imageStorage, ICategoryRepository categoryRepo)
+    public ProductService(IProductRepository productRepo, IUnitOfWork unitOfWork, IImageStorageService imageStorage, ICategoryRepository categoryRepo,
+      ILogger<ProductService> logger)
     {
         _productRepo = productRepo;
         _unitOfWork = unitOfWork;
         _imageStorage = imageStorage;
         _categoryRepo = categoryRepo;
+        _logger = logger;
     }
 
     public async Task<ProductDto> CreateAsync(
         CreateProductRequest request,
         List<(Stream Stream, string FileName)>? images)
     {
+        _logger.LogInformation("Creating product: {Name}, price {Price}", request.Name, request.Price);
+
         var product = new Domain.Entities.Product
         {
             Name = request.Name,
@@ -44,6 +50,8 @@ public class ProductService : IProductService
             }
         }
 
+        _logger.LogInformation("Product created with ID {ProductId}", product.Id);
+
         await _productRepo.AddAsync(product);
         await _unitOfWork.Commit();
 
@@ -59,6 +67,9 @@ public class ProductService : IProductService
 
     public async Task UpdateAsync(int id, UpdateProductRequest request)
     {
+
+        _logger.LogInformation("Updating product {ProductId}: new name {Name}, new price {Price}", id, request.Name, request.Price);
+
         // Fetch product (includes images due to repository override – that's fine)
         var product = await _productRepo.GetByIdAsync(id);
         if (product == null)
@@ -135,6 +146,8 @@ public class ProductService : IProductService
 
     public async Task DeleteAsync(int id)
     {
+        _logger.LogInformation("Deleting product {ProductId}", id);
+
         var product = await _productRepo.GetByIdAsync(id);
         if (product == null)
             throw new InvalidOperationException($"Product with id {id} not found.");

@@ -3,6 +3,7 @@ using Application.Abstractions;
 using Application.Features.Orders.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Features.Orders.Services;
 
@@ -14,6 +15,7 @@ public class OrderService : IOrderService
     private readonly IProductRepository _productRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPaymentService _paymentService; // mock
+    private readonly ILogger<OrderService> _logger;
 
     public OrderService(
         IOrderRepository orderRepo,
@@ -21,7 +23,8 @@ public class OrderService : IOrderService
         IProfileRepository profileRepo,
         IProductRepository productRepo,
         IUnitOfWork unitOfWork,
-        IPaymentService paymentService)
+        IPaymentService paymentService,
+        ILogger<OrderService> logger)
     {
         _orderRepo = orderRepo;
         _cartRepo = cartRepo;
@@ -29,6 +32,7 @@ public class OrderService : IOrderService
         _productRepo = productRepo;
         _unitOfWork = unitOfWork;
         _paymentService = paymentService;
+        _logger = logger;
     }
 
     private async Task<int> GetProfileIdAsync(string userId)
@@ -41,6 +45,8 @@ public class OrderService : IOrderService
 
     public async Task<OrderDto> PlaceOrderAsync(string userId)
     {
+        _logger.LogInformation("Placing order for user {UserId}", userId);
+
         await _unitOfWork.StartTransaction();
 
         try
@@ -60,8 +66,11 @@ public class OrderService : IOrderService
                 if (product == null)
                     throw new InvalidOperationException($"Product {cartItem.ProductId} not found.");
                 if (product.Stock < cartItem.Quantity)
+                {
+                    _logger.LogWarning("Insufficient stock for product {ProductId}, requested {Requested}, available {Available}", product.Id, cartItem.Quantity, product.Stock);
                     throw new InvalidOperationException($"Insufficient stock for product {product.Name}.");
 
+                }
                 // Deduct stock
                 product.Stock -= cartItem.Quantity;
                 _productRepo.Update(product);
@@ -87,6 +96,9 @@ public class OrderService : IOrderService
                 Status = OrderStatus.Pending,
                 Items = orderItems
             };
+
+            _logger.LogInformation("Order created with ID {OrderId}, total {Total}", order.Id, order.Total);
+
             await _orderRepo.AddAsync(order);
 
             // 5. Process payment (mock)
