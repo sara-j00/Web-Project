@@ -12,7 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Persistence\Configurations\Order\" />
     <Folder Include="Persistence\UnitOfWork\" />
   </ItemGroup>
 

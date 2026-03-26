@@ -8,16 +8,21 @@ using Resend;
 using Serilog;
 using Serilog.Formatting.Json;
 
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog();
+
 Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
     .WriteTo.Console()                      // Console output
     .WriteTo.File(new JsonFormatter(),
     "logs/app-.json",          // File sink with rolling interval
         rollingInterval: RollingInterval.Day)
+    .WriteTo.File("logs/app-.txt",
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
     .CreateLogger();
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
