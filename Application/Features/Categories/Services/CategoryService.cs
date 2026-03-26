@@ -1,4 +1,5 @@
 ﻿using Application.Abstraction;
+using Application.Exceptions; // for NotFoundException, ConflictException
 using Application.Features.Categories.Dtos;
 using Domain.Entities;
 using Microsoft.Extensions.Logging;
@@ -22,65 +23,66 @@ public class CategoryService : ICategoryService
     {
         _logger.LogInformation("Attempting to create category with name {CategoryName}", request.Name);
 
-        // Use AnyAsync (inherited from generic repository)
         bool exists = await _categoryRepo.AnyAsync(c => c.Name == request.Name);
         if (exists)
         {
             _logger.LogWarning("Category creation failed: name {CategoryName} already exists", request.Name);
-            
-            throw new InvalidOperationException("Category already exists.");
+            throw new ConflictException("Category already exists."); // 409
         }
 
         var category = new Category { Name = request.Name };
-
-        // Use AddAsync (inherited)
         await _categoryRepo.AddAsync(category);
-
-        // Commit the transaction – this saves changes to the database
         await _unitOfWork.Commit();
 
         _logger.LogInformation("Category created with ID {CategoryId}, name {CategoryName}", category.Id, category.Name);
-
         return new CategoryDto(category.Id, category.Name);
     }
 
     public async Task UpdateAsync(int id, UpdateCategoryRequest request)
-{
-    // Basic validation (until FluentValidation)
-    if (string.IsNullOrWhiteSpace(request.Name))
-        throw new ArgumentException("Category name is required.");
+    {
+        _logger.LogInformation("Attempting to update category {CategoryId}", id);
 
-    var category = await _categoryRepo.GetByIdAsync(id);
-    if (category == null)
-        throw new InvalidOperationException($"Category with id {id} not found.");
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new ArgumentException("Category name is required.");
 
-    // Optional: prevent duplicate names (excluding itself)
-    bool nameExists = await _categoryRepo.AnyAsync(c => c.Name == request.Name && c.Id != id);
-    if (nameExists)
-        throw new InvalidOperationException("A category with this name already exists.");
+        var category = await _categoryRepo.GetByIdAsync(id);
+        if (category == null)
+        {
+            _logger.LogWarning("Update failed: category {CategoryId} not found", id);
+            throw new NotFoundException($"Category with id {id} not found."); // 404
+        }
 
-    category.Name = request.Name;
+        bool nameExists = await _categoryRepo.AnyAsync(c => c.Name == request.Name && c.Id != id);
+        if (nameExists)
+        {
+            _logger.LogWarning("Update failed: name {CategoryName} already used by another category", request.Name);
+            throw new ConflictException("A category with this name already exists."); // 409
+        }
 
-    // Entity is tracked – no need to call Update()
-    await _unitOfWork.Commit();
-}
+        string oldName = category.Name;
+        category.Name = request.Name;
+        await _unitOfWork.Commit();
+
+        _logger.LogInformation("Category {CategoryId} updated: name changed from '{OldName}' to '{NewName}'", id, oldName, request.Name);
+    }
 
     public async Task DeleteAsync(int id)
     {
+        _logger.LogInformation("Attempting to delete category {CategoryId}", id);
+
         var category = await _categoryRepo.GetByIdAsync(id);
         if (category == null)
         {
             _logger.LogWarning("Delete failed: category {CategoryId} not found", id);
-
-            throw new InvalidOperationException($"Category with id {id} not found.");
+            throw new NotFoundException($"Category with id {id} not found."); // 404
         }
 
-        // Optional: prevent deletion if category has products
-        // You need a way to check related products – either through a ProductRepository or navigation property
-        // Example using a hypothetical method:
-        bool hasProducts = await _categoryRepo.HasProductsAsync(id); // You'd need to implement this in ICategoryRepository
+        bool hasProducts = await _categoryRepo.HasProductsAsync(id);
         if (hasProducts)
-            throw new InvalidOperationException("Cannot delete category that has products.");
+        {
+            _logger.LogWarning("Delete failed: category {CategoryId} has associated products", id);
+            throw new InvalidOperationException("Cannot delete category that has products."); // 400 (or could be 409)
+        }
 
         _categoryRepo.Remove(category);
         await _unitOfWork.Commit();
@@ -91,6 +93,7 @@ public class CategoryService : ICategoryService
     public async Task<IEnumerable<CategoryDto>> GetAllAsync()
     {
         var categories = await _categoryRepo.GetAll();
+        _logger.LogInformation("Retrieved {Count} categories", categories.Count());
         return categories.Select(c => new CategoryDto(c.Id, c.Name));
     }
 
@@ -98,9 +101,10 @@ public class CategoryService : ICategoryService
     {
         var category = await _categoryRepo.GetByIdAsync(id);
         if (category == null)
-            throw new InvalidOperationException($"Category with id {id} not found.");
-
+        {
+            _logger.LogWarning("Category {CategoryId} not found", id);
+            throw new NotFoundException($"Category with id {id} not found."); // 404
+        }
         return new CategoryDto(category.Id, category.Name);
     }
 }
-

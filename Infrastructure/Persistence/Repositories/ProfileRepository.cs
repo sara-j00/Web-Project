@@ -19,4 +19,9 @@ public class ProfileRepository : GenericRepository<Profile>, IProfileRepository
     {
         return await _context.Set<Profile>().FirstOrDefaultAsync(p => p.UserId == userId);
     }
+
+    public async Task<Profile?> GetByIdAsync(int id)
+    {
+        return await _context.Set<Profile>().FirstOrDefaultAsync(p => p.Id == id);
+    }
 }

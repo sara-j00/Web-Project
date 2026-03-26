@@ -1,5 +1,6 @@
 ﻿using Application.Abstraction;
 using Application.Abstractions;
+using Application.Exceptions;
 using Application.Features.Orders.Dtos;
 using Domain.Entities;
 using Domain.Enums;
@@ -35,12 +36,18 @@ public class OrderService : IOrderService
         _logger = logger;
     }
 
-    private async Task<int> GetProfileIdAsync(string userId)
+
+
+    private static OrderDto MapToDto(Order order, string userName)
     {
-        var profile = await _profileRepo.GetByUserIdAsync(userId);
-        if (profile == null)
-            throw new InvalidOperationException("Profile not found.");
-        return profile.Id;
+        var items = order.Items.Select(i => new OrderItemDto(
+            i.ProductId,
+            i.ProductName,
+            i.UnitPrice,
+            i.Quantity,
+            i.UnitPrice * i.Quantity
+        )).ToList();
+        return new OrderDto(order.Id, order.OrderDate, order.Total, order.Status, items, userName);
     }
 
     public async Task<OrderDto> PlaceOrderAsync(string userId)
@@ -51,12 +58,14 @@ public class OrderService : IOrderService
 
         try
         {
-            var profileId = await GetProfileIdAsync(userId);
+            var profile = await _profileRepo.GetByUserIdAsync(userId);
+            if (profile == null)
+                throw new NotFoundException("User profile not found."); // 404
 
             // 1. Get cart with items
-            var cart = await _cartRepo.GetCartWithItemsByProfileIdAsync(profileId);
+            var cart = await _cartRepo.GetCartWithItemsByProfileIdAsync(profile.Id);
             if (cart == null || !cart.Items.Any())
-                throw new InvalidOperationException("Cart is empty.");
+                throw new ArgumentException("Cart is empty."); // 400
 
             // 2. Validate stock and prepare order items
             var orderItems = new List<OrderItem>();
@@ -64,7 +73,8 @@ public class OrderService : IOrderService
             {
                 var product = await _productRepo.GetByIdAsync(cartItem.ProductId);
                 if (product == null)
-                    throw new InvalidOperationException($"Product {cartItem.ProductId} not found.");
+                    throw new NotFoundException($"Product {cartItem.ProductId} not found."); // 404
+
                 if (product.Stock < cartItem.Quantity)
                 {
                     _logger.LogWarning("Insufficient stock for product {ProductId}, requested {Requested}, available {Available}", product.Id, cartItem.Quantity, product.Stock);
@@ -91,7 +101,7 @@ public class OrderService : IOrderService
             // 4. Create order
             var order = new Order
             {
-                ProfileId = profileId,
+                ProfileId = profile.Id,
                 Total = total,
                 Status = OrderStatus.Pending,
                 Items = orderItems
@@ -114,7 +124,7 @@ public class OrderService : IOrderService
             await _unitOfWork.CommitTransaction();
 
             // 7. Return DTO
-            return MapToDto(order);
+            return MapToDto(order, profile.Username);
         }
         catch
         {
@@ -125,29 +135,51 @@ public class OrderService : IOrderService
 
     public async Task<IEnumerable<OrderDto>> GetUserOrdersAsync(string userId)
     {
-        var profileId = await GetProfileIdAsync(userId);
-        var orders = await _orderRepo.GetOrdersByProfileIdAsync(profileId);
-        return orders.Select(MapToDto);
+        var profile = await _profileRepo.GetByUserIdAsync(userId);
+        if (profile == null)
+            throw new NotFoundException("User profile not found."); // 404
+        var orders = await _orderRepo.GetOrdersByProfileIdAsync(profile.Id);
+        return orders.Select(o => MapToDto(o, profile.Username));
     }
 
     public async Task<OrderDto> GetOrderAsync(int orderId, string userId)
     {
-        var profileId = await GetProfileIdAsync(userId);
-        var order = await _orderRepo.GetOrderWithItemsAsync(orderId, profileId);
+        var profile = await _profileRepo.GetByUserIdAsync(userId);
+        if (profile == null)
+            throw new NotFoundException("User profile not found."); // 404
+        var order = await _orderRepo.GetOrderWithItemsAsync(orderId, profile.Id);
         if (order == null)
-            throw new InvalidOperationException("Order not found.");
-        return MapToDto(order);
+            throw new NotFoundException("Order not found."); // 404
+        return MapToDto(order, profile.Username);
     }
 
-    private static OrderDto MapToDto(Order order)
+    public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync()
     {
-        var items = order.Items.Select(i => new OrderItemDto(
-            i.ProductId,
-            i.ProductName,
-            i.UnitPrice,
-            i.Quantity,
-            i.UnitPrice * i.Quantity
-        )).ToList();
-        return new OrderDto(order.Id, order.OrderDate, order.Total, order.Status, items);
+        var orders = await _orderRepo.GetAllOrdersWithItemsAsync();
+        var result = new List<OrderDto>();
+
+        foreach (var order in orders)
+        {
+            var profile = await _profileRepo.GetByIdAsync(order.ProfileId);
+            var userName = profile?.Username ?? "Unknown";
+            result.Add(MapToDto(order, userName));
+        }
+        return result;
+    }
+
+    public async Task UpdateOrderStatusAsync(int orderId, string newStatus)
+    {
+        // Validate status string
+        if (!Enum.TryParse<OrderStatus>(newStatus, true, out var status))
+            throw new ArgumentException($"Invalid order status: {newStatus}");
+
+        var order = await _orderRepo.GetOrderWithItemsByIdAsync(orderId);
+        if (order == null)
+            throw new NotFoundException($"Order with ID {orderId} not found."); //404
+
+        // Optional: add business rules (e.g., cannot change status from Shipped to Pending)
+        order.Status = status;
+        // No need to call update – entity is tracked
+        await _unitOfWork.Commit();
     }
 }

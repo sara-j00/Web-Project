@@ -1,5 +1,6 @@
 ﻿using Application.Abstraction;
 using Application.Abstractions;
+using Application.Exceptions;
 using Application.Features.Cart.Dtos;
 using Domain.Entities;
 using Microsoft.Extensions.Logging;
@@ -32,7 +33,7 @@ public class CartService : ICartService
     {
         var profile = await _profileRepo.GetByUserIdAsync(userId);
         if (profile == null)
-            throw new InvalidOperationException("Profile not found.");
+            throw new NotFoundException("Profile not found.");
         return profile.Id;
     }
 
@@ -50,11 +51,11 @@ public class CartService : ICartService
 
     public async Task<CartDto> GetCartAsync(string userId)
     {
-        var profileId = await GetProfileIdAsync(userId);
-        var cart = await _cartRepo.GetCartWithItemsByProfileIdAsync(profileId);
+        var profile = await _profileRepo.GetByUserIdAsync(userId);
+        var cart = await _cartRepo.GetCartWithItemsByProfileIdAsync(profile.Id);
         if (cart == null)
         {
-            return new CartDto(0, new List<CartItemDto>(), 0);
+            return new CartDto(new List<CartItemDto>(), 0);
         }
 
         var items = cart.Items.Select(ci => new CartItemDto(
@@ -67,7 +68,7 @@ public class CartService : ICartService
         )).ToList();
 
         var total = items.Sum(i => i.TotalPrice);
-        return new CartDto(cart.Id, items, total);
+        return new CartDto(items, total);
     }
 
     public async Task AddToCartAsync(string userId, int productId, int quantity)
@@ -80,10 +81,7 @@ public class CartService : ICartService
         var profileId = await GetProfileIdAsync(userId);
         var product = await _productRepo.GetByIdAsync(productId);
         if (product == null)
-            throw new InvalidOperationException("Product not found.");
-
-        // Optional: check stock (if you want)
-        // if (product.StockQuantity < quantity) throw ...
+            throw new NotFoundException($"Product with id {productId} not found.");
 
         var cart = await GetOrCreateCartAsync(profileId);
         var existingItem = await _cartRepo.GetCartItemAsync(cart.Id, productId);
@@ -92,6 +90,7 @@ public class CartService : ICartService
         {
             existingItem.Quantity += quantity;
             _cartRepo.UpdateItem(existingItem);
+            _logger.LogInformation("Product {ProductId} quantity increased to {NewQuantity}", productId, existingItem.Quantity);
         }
         else
         {
@@ -102,29 +101,33 @@ public class CartService : ICartService
                 Quantity = quantity
             };
             _cartRepo.AddItem(newItem);
+            _logger.LogInformation("Product {ProductId} added to cart with quantity {Quantity}", productId, quantity);
         }
 
-        _logger.LogInformation("Product {ProductId} added to cart (new quantity {NewQuantity})", productId, existingItem.Quantity);
         await _unitOfWork.Commit();
     }
 
     public async Task UpdateQuantityAsync(string userId, int productId, int quantity)
     {
+        _logger.LogInformation("Updating product {ProductId} quantity to {Quantity} for user {UserId}", productId, quantity, userId);
+
         if (quantity <= 0)
             throw new ArgumentException("Quantity must be positive.");
 
         var profileId = await GetProfileIdAsync(userId);
         var cart = await _cartRepo.GetCartWithItemsByProfileIdAsync(profileId);
         if (cart == null)
-            throw new InvalidOperationException("Cart not found.");
+            throw new NotFoundException("Cart not found.");
 
         var item = cart.Items.FirstOrDefault(ci => ci.ProductId == productId);
         if (item == null)
-            throw new InvalidOperationException("Item not found in cart.");
+            throw new NotFoundException($"Product {productId} not found in cart.");
 
         item.Quantity = quantity;
         _cartRepo.UpdateItem(item);
         await _unitOfWork.Commit();
+
+        _logger.LogInformation("Product {ProductId} quantity updated to {Quantity}", productId, quantity);
     }
 
     public async Task RemoveFromCartAsync(string userId, int productId)
@@ -133,26 +136,34 @@ public class CartService : ICartService
 
         var profileId = await GetProfileIdAsync(userId);
         var cart = await _cartRepo.GetCartWithItemsByProfileIdAsync(profileId);
-        if (cart == null) return;
+        if (cart == null) return; // nothing to remove
 
         var item = cart.Items.FirstOrDefault(ci => ci.ProductId == productId);
         if (item != null)
         {
             _cartRepo.RemoveItem(item);
             await _unitOfWork.Commit();
+            _logger.LogInformation("Product {ProductId} removed from cart", productId);
+        }
+        else
+        {
+            _logger.LogWarning("Attempted to remove product {ProductId} not in cart for user {UserId}", productId, userId);
         }
     }
 
     public async Task ClearCartAsync(string userId)
     {
+        _logger.LogInformation("Clearing cart for user {UserId}", userId);
+
         var profileId = await GetProfileIdAsync(userId);
         var cart = await _cartRepo.GetCartWithItemsByProfileIdAsync(profileId);
         if (cart == null) return;
 
-        foreach (var item in cart.Items.ToList())
-        {
+        var items = cart.Items.ToList();
+        foreach (var item in items)
             _cartRepo.RemoveItem(item);
-        }
+
         await _unitOfWork.Commit();
+        _logger.LogInformation("Cart cleared for user {UserId}, {Count} items removed", userId, items.Count);
     }
 }

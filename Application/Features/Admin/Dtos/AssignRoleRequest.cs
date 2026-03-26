@@ -1,3 +1,10 @@
-﻿namespace Application.Features.Admin.Dtos;
+﻿using System.ComponentModel.DataAnnotations;
 
-public record AssignRoleRequest(string UserId, string Role);
+namespace Application.Features.Admin.Dtos;
+
+public record AssignRoleRequest(
+    [Required(ErrorMessage = "UserId is required")]
+    string UserId,
+    [Required(ErrorMessage = "Role is required")]
+    string Role
+    );

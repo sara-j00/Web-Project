@@ -7,5 +7,6 @@ public record OrderDto(
     DateTime OrderDate,
     decimal Total,
     OrderStatus Status,
-    List<OrderItemDto> Items
+    List<OrderItemDto> Items,
+    string Username
 );

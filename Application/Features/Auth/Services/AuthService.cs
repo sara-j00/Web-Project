@@ -19,7 +19,6 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
 
-
     public AuthService(
         IUserRepository userRepository,
         IProfileRepository profileRepository,
@@ -27,8 +26,7 @@ public class AuthService : IAuthService
         ITokenGenerator tokenGenerator,
         IEmailService emailService,
         IConfiguration configuration,
-        ILogger<AuthService> logger
-        )
+        ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
         _profileRepository = profileRepository;
@@ -45,7 +43,7 @@ public class AuthService : IAuthService
 
         try
         {
-            // 1. Check uniqueness (optional, can also be done by Identity)
+            // 1. Check uniqueness
             if (await _userRepository.EmailExistsAsync(request.Email))
                 throw new ConflictException("Email already exists.");
             if (await _userRepository.UsernameExistsAsync(request.Username))
@@ -55,38 +53,31 @@ public class AuthService : IAuthService
             var userId = await _userRepository.CreateAsync(
                 request.Email,
                 request.Username,
-                request.Password
-            );
+                request.Password);
 
-            // 3. Fetch the created user (to get full details)
+            // 3. Fetch created user (to get full details)
             var user = await _userRepository.GetUserByIdAsync(userId);
             if (user == null)
-                throw new Exception("User creation failed.");
+                throw new InvalidOperationException("User creation failed.");
 
-            // 4. Create profile
-            await _profileRepository.CreateAsync(
-                userId,
-                request.Username,
-                request.MobileNumber
-            );
-
-            // 5. get profile to log profileId 
+            // 4. Create profile and get its id
             await _profileRepository.CreateAsync(userId, request.Username, request.MobileNumber);
-            var profile = await _profileRepository.GetByUserIdAsync(userId);
-            if (profile == null) throw new Exception("Profile creation failed.");
-            var profileId = profile.Id;
-
-            // 6. Assign default role "Customer"
+                        
+            // 5. Assign default role
             const string role = "Customer";
             await _userRepository.AddToRoleAsync(userId, role);
 
-            _logger.LogInformation("User registered successfully. Email: {Email}, ProfileId: {ProfileId}", user.Email, profileId);
-
-            // 7. Commit transaction
+            // 6. Commit transaction
             await _unitOfWork.Commit();
             await _unitOfWork.CommitTransaction();
 
-            // 8. Generate token
+            var profile = await _profileRepository.GetByUserIdAsync(userId);
+            var profileId = profile?.Id ?? 0;
+
+            _logger.LogInformation("User registered successfully. Email: {Email}, ProfileId: {ProfileId}", user.Email, profileId);
+
+
+            // 7. Generate token
             var token = _tokenGenerator.GenerateToken(user, role);
 
             return new AuthResponse(token, user.Email, role);
@@ -100,7 +91,8 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        // 1. Find user by email or username
+        _logger.LogInformation("Login attempt for {UsernameOrEmail}", request.UsernameOrEmail);
+
         UserModel? user;
         if (request.UsernameOrEmail.Contains("@"))
             user = await _userRepository.GetUserByEmailAsync(request.UsernameOrEmail);
@@ -108,30 +100,40 @@ public class AuthService : IAuthService
             user = await _userRepository.GetUserByUsernameAsync(request.UsernameOrEmail);
 
         if (user == null)
+        {
+            _logger.LogWarning("Login failed: user not found for {UsernameOrEmail}", request.UsernameOrEmail);
             throw new UnauthorizedAccessException("Invalid credentials");
+        }
 
-        // 2. Check password
         bool valid = await _userRepository.CheckPasswordAsync(user.Id, request.Password);
         if (!valid)
+        {
+            _logger.LogWarning("Login failed: invalid password for user {UserId}", user.Id);
             throw new UnauthorizedAccessException("Invalid credentials");
+        }
 
-        // 3. Get roles
         var roles = await _userRepository.GetRolesAsync(user.Id);
         var role = roles.FirstOrDefault() ?? "Customer";
 
-        // 4. Generate token
         var token = _tokenGenerator.GenerateToken(user, role);
 
+        _logger.LogInformation("User {UserId} logged in successfully", user.Id);
         return new AuthResponse(token, user.Email, role);
     }
 
-    public Task LogoutAsync() => Task.CompletedTask; // JWT is stateless
-
+    public Task LogoutAsync() => Task.CompletedTask;
 
     public async Task ForgotPasswordAsync(string email, string origin)
     {
+        _logger.LogInformation("Password reset requested for {Email}", email);
+
         var user = await _userRepository.GetUserByEmailAsync(email);
-        if (user == null) return; // Don't leak existence
+        if (user == null)
+        {
+            // Do not leak existence; log a warning for monitoring
+            _logger.LogWarning("Password reset requested for non-existent email: {Email}", email);
+            return;
+        }
 
         var token = await _userRepository.GeneratePasswordResetTokenAsync(user.Id);
         var resetLink = $"{origin}/reset-password?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(email)}";
@@ -143,24 +145,38 @@ public class AuthService : IAuthService
         <p>If you didn't request this, please ignore this email.</p>";
 
         await _emailService.SendEmailAsync(email, subject, body);
-        //Console.WriteLine("reset link: " + resetLink);
+        _logger.LogInformation("Password reset email sent to {Email}", email);
     }
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request)
     {
+        _logger.LogInformation("Password reset attempt for {Email}", request.Email);
+
         var user = await _userRepository.GetUserByEmailAsync(request.Email);
         if (user == null)
             throw new InvalidOperationException("Invalid request.");
 
         var succeeded = await _userRepository.ResetPasswordAsync(user.Id, request.Token, request.NewPassword);
         if (!succeeded)
+        {
+            _logger.LogWarning("Password reset failed for {Email} – token invalid or expired", request.Email);
             throw new InvalidOperationException("Password reset failed. Token may be invalid or expired.");
+        }
+
+        _logger.LogInformation("Password reset succeeded for {Email}", request.Email);
     }
 
     public async Task ChangePasswordAsync(string userId, ChangePasswordRequest request)
     {
+        _logger.LogInformation("Password change attempt for user {UserId}", userId);
+
         var succeeded = await _userRepository.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
         if (!succeeded)
+        {
+            _logger.LogWarning("Password change failed for user {UserId} – current password incorrect", userId);
             throw new InvalidOperationException("Current password is incorrect or new password is invalid.");
+        }
+
+        _logger.LogInformation("Password changed successfully for user {UserId}", userId);
     }
 }

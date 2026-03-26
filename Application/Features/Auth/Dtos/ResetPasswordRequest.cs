@@ -1,3 +1,15 @@
-﻿namespace Application.Features.Auth.Dtos;
+﻿using System.ComponentModel.DataAnnotations;
 
-public record ResetPasswordRequest(string Email, string Token, string NewPassword);
+namespace Application.Features.Auth.Dtos;
+
+public record ResetPasswordRequest(
+    [Required(ErrorMessage = "Email is required")]
+    [EmailAddress(ErrorMessage = "Invalid email format")]
+    string Email,
+
+    [Required(ErrorMessage = "Token is required")]
+    string Token,
+    
+    [Required(ErrorMessage = "New password is required")]
+    [MinLength(6, ErrorMessage = "New password must be at least 6 characters")]
+    string NewPassword);

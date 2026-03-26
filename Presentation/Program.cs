@@ -20,6 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 var resendApiKey = builder.Configuration["Resend:ApiKey"];
 builder.Services.AddSingleton<IResend>(sp => ResendClient.Create(resendApiKey)); 

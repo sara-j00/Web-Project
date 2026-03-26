@@ -24,5 +24,20 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == orderId && o.ProfileId == profileId);
     }
+
+    public async Task<IEnumerable<Order>> GetAllOrdersWithItemsAsync()
+    {
+        return await _context.Set<Order>()
+            .Include(o => o.Items)
+            .OrderByDescending(o => o.OrderDate)
+            .ToListAsync();
+    }
+
+    public async Task<Order?> GetOrderWithItemsByIdAsync(int orderId)
+    {
+        return await _context.Set<Order>()
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+    }
 }
 

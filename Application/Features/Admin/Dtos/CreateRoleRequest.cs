@@ -1,3 +1,9 @@
-﻿namespace Application.Features.Admin.Dtos;
+﻿using System.ComponentModel.DataAnnotations;
 
-public record CreateRoleRequest(string Name);
+namespace Application.Features.Admin.Dtos;
+
+public record CreateRoleRequest(
+    [Required(ErrorMessage = "Role name is required")]
+    [MaxLength(100, ErrorMessage = "Name length cannot exceed 100 characters")]
+    string Name
+    );

@@ -1,12 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Persistence.Configurations.Category
+namespace Infrastructure.Persistence.Configurations.Category;
+
+public class CategoryConfiguration : IEntityTypeConfiguration<Domain.Entities.Category>
 {
-    internal class CategoryConfiguration
+    public void Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<Domain.Entities.Category> builder)
     {
+
+        builder.HasKey(c => c.Id);
+        
+        builder.Property(c => c.Name)
+            .IsRequired()
+            .HasMaxLength(100);
     }
 }

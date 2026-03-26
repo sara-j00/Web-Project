@@ -28,10 +28,10 @@ public class GlobalExceptionMiddleware
             // Determine status code based on exception type
             var statusCode = ex switch
             {
-                InvalidOperationException => (int)HttpStatusCode.NotFound,
-                ArgumentException => (int)HttpStatusCode.BadRequest,
+                InvalidOperationException or ArgumentException => (int)HttpStatusCode.BadRequest,
                 UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
                 ConflictException => (int)HttpStatusCode.Conflict,
+                NotFoundException => (int)HttpStatusCode.NotFound,
                 _ => (int)HttpStatusCode.InternalServerError
             };
 
